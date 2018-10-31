@@ -1,0 +1,37 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: etcd-backup
+spec:
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  schedule: "0 */3 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            iam.amazonaws.com/role: cluster-k8s-etcd-backup
+        spec:
+          containers:
+          - name: etcd-backups
+            image: bsycorp/etcd-backup:latest
+            env:
+            - name: INSTANCE_NAME
+              value: master.cluster.example
+            - name: VOLUME
+              value: main
+            - name: AWS_REGION
+              value: ap-southeast-2
+            - name: SNAPSHOT_RETENTION
+              value: "8"
+            imagePullPolicy: Always
+            resources:
+              limits:
+                cpu: 200m
+                memory: 256Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+          restartPolicy: OnFailure
